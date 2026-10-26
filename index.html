@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>La Luce e il Diamante</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>💎</text></svg>">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,600;1,500&family=Nunito:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root{--night:#0d1033;--ink:#1b1f5c;--rose:#f08ab0;--gold:#f4c872;--ivory:#fff3dc;color-scheme:dark}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0}
+body{background:radial-gradient(ellipse at 50% 0,#2a2477 0,var(--night) 65%);color:var(--ivory);font:17px/1.55 Nunito,system-ui,sans-serif;padding:env(safe-area-inset-top) 0 env(safe-area-inset-bottom);overflow-x:hidden}
+#stars{position:fixed;inset:0;z-index:0;pointer-events:none}
+#hud{position:relative;z-index:2;display:flex;justify-content:space-between;align-items:center;gap:12px;padding:14px 18px;font-size:15px}
+#gems span{opacity:.3;filter:grayscale(1);transition:.4s}
+#gems span.on{opacity:1;filter:none;text-shadow:0 0 12px var(--gold)}
+#music{background:none;border:1px solid #fff3;color:var(--ivory);border-radius:20px;padding:4px 12px;font:inherit;cursor:pointer}
+main{position:relative;z-index:1;display:flex;justify-content:center;padding:8px 16px 40px}
+.card{width:100%;max-width:520px;background:#1b1f5ccc;border:1px solid #f4c87244;border-radius:22px;padding:26px 22px;text-align:center;backdrop-filter:blur(6px);animation:in .6s ease both}
+@keyframes in{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+h1,h2{font-family:"Cormorant Garamond",Georgia,serif;font-weight:600;margin:.2em 0 .4em;line-height:1.1;color:var(--gold)}
+h1{font-size:2.6rem}h2{font-size:1.9rem}
+.sub{font-style:italic;opacity:.8}
+.q{font-size:1.15rem;margin:14px 0}
+.opts{display:grid;gap:10px;margin:14px 0}
+button.b,.opts button{font:inherit;color:var(--ivory);background:#ffffff12;border:1px solid #f4c87277;border-radius:14px;padding:12px 14px;cursor:pointer;transition:.2s}
+button.b:hover,.opts button:hover:not(:disabled){background:#f4c87233;transform:translateY(-1px)}
+button.b:focus-visible,.opts button:focus-visible{outline:3px solid var(--rose);outline-offset:2px}
+button.go{background:linear-gradient(135deg,var(--rose),var(--gold));color:#2a1740;font-weight:700;border:0}
+.opts button:disabled{opacity:.55;cursor:default}
+#fb{min-height:3.2em;color:var(--rose);font-weight:700}
+.gem{width:96px;height:84px;margin:10px auto;background:linear-gradient(135deg,#fff 0,#a9e8ff 30%,#f08ab0 60%,#fff 100%);clip-path:polygon(25% 0,75% 0,100% 35%,50% 100%,0 35%);animation:shine 2.4s ease-in-out infinite;border:0;display:block;padding:0}
+.gem.big{width:150px;height:132px;cursor:pointer}
+@keyframes shine{50%{filter:drop-shadow(0 0 18px var(--gold)) brightness(1.25)}}
+#meter{height:12px;border-radius:8px;background:#ffffff22;margin:6px 0 4px;overflow:hidden}
+#meter i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--rose),var(--gold));transition:width .6s}
+.track{position:relative;height:70px;margin:18px 6px;border-bottom:2px dashed #f4c87266}
+#plane{position:absolute;bottom:-14px;left:0;font-size:34px;transition:left 1s ease}
+.ends{display:flex;justify-content:space-between;font-size:14px;opacity:.8}
+.dates{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.note{margin-top:14px;padding:14px;border-radius:14px;background:#0003;border:1px solid #f08ab055;text-align:left}
+.letter{text-align:left;font-family:"Cormorant Garamond",Georgia,serif;font-size:1.3rem;line-height:1.5}
+.letter p{margin:.5em 0}
+.heart{position:fixed;bottom:-30px;z-index:5;pointer-events:none;animation:up 4s linear forwards}
+@keyframes up{to{transform:translateY(-110vh) rotate(25deg);opacity:0}}
+#no{position:relative}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<canvas id="stars"></canvas>
+<div id="hud"><div id="gems" aria-label="Diamanti raccolti"><span>💎</span><span>💎</span><span>💎</span></div><button id="music" type="button">♪ Musica spenta</button></div>
+<main><div id="app"></div></main>
+<audio id="bgm" src="music.mp3" loop></audio>
+<audio id="voice" src="voice.mp3"></audio>
+<script>
+const app=document.getElementById('app'),$=s=>document.querySelector(s);
+let gems=0,boy=0;
+const bgm=$('#bgm'),mb=$('#music');
+
+/* ---------- helpers ---------- */
+function show(html){app.innerHTML='<section class="card">'+html+'</section>';window.scrollTo(0,0)}
+function hearts(n=24){for(let i=0;i<n;i++){const h=document.createElement('div');h.className='heart';h.textContent=['❤️','💖','✨','💎'][i%4];h.style.left=Math.random()*100+'vw';h.style.fontSize=16+Math.random()*24+'px';h.style.animationDelay=Math.random()*1.5+'s';document.body.appendChild(h);setTimeout(()=>h.remove(),6000)}}
+function gem(){gems++;document.querySelectorAll('#gems span').forEach((s,i)=>s.classList.toggle('on',i<gems));hearts(10)}
+function next(label,fn){const b=document.createElement('button');b.className='b go';b.textContent=label;b.onclick=fn;$('.card').appendChild(b)}
+function toast(t,fn){show('<div class="gem"></div><h2>'+t+'</h2>');next('Continua',fn)}
+
+/* ---------- music ---------- */
+function startMusic(){bgm.play().then(()=>mb.textContent='♪ Musica accesa').catch(()=>{})}
+mb.onclick=()=>{if(bgm.paused){bgm.play().then(()=>mb.textContent='♪ Musica accesa').catch(()=>mb.textContent='♪ file musica mancante')}else{bgm.pause();mb.textContent='♪ Musica spenta'}};
+
+/* ---------- quiz: opzione = [testo, risposta, punti, riprova?] ---------- */
+function quiz(title,list,done,meter){
+  let i=0;
+  (function ask(){
+    const q=list[i];
+    show('<h2>'+title+'</h2>'+(meter?'<div class="sub">Livello Fidanzato di Luca: <b id="pct">'+boy+'%</b></div><div id="meter"><i style="width:'+boy+'%"></i></div>':'')+
+      '<p class="q">'+q.q+'</p><div class="opts">'+q.o.map((o,k)=>'<button data-k="'+k+'">'+o[0]+'</button>').join('')+'</div><p id="fb"></p>');
+    document.querySelectorAll('.opts button').forEach(btn=>btn.onclick=()=>{
+      const o=q.o[btn.dataset.k];
+      $('#fb').textContent=o[1];
+      if(o[3])return;
+      boy=Math.min(100,boy+(o[2]||0));
+      if(meter){$('#meter i').style.width=boy+'%';$('#pct').textContent=boy+'%'}
+      if(o[2]>=20)hearts(8);
+      document.querySelectorAll('.opts button').forEach(x=>x.disabled=true);
+      next(++i<list.length?'Avanti':'Continua',()=>i<list.length?ask():done());
+    });
+  })();
+}
+
+/* ---------- fase 1: la missione ---------- */
+function intro(){
+  show('<div class="gem" role="img" aria-label="Diamante"></div><h1>La Luce e il Diamante</h1><p class="sub">Una luce italiana. Un diamante persiano. Una distanza impossibile.</p>'+
+  '<div class="note"><b>ATTENZIONE, LUCA! 🚨</b><br>Sei stato scelto per una missione top secret.<br>È stato scoperto un raro diamante persiano.<br>Nome: NEGIN 💎 · Valore: assolutamente inestimabile.<br>Posizione: lontano dal tuo cuore italiano.<br><i>Avviso: bellissimo, ogni tanto melodrammatico, pericolosamente adorabile.<br>Firmato: la tua naughty girl 😏</i></div>'+
+  '<p class="q">Accetti la missione, Signor Luca?</p><div class="opts"><button class="go b" id="yes">SÌ, AMORE! ❤️</button><button class="b" id="no">NO, HO PAURA! 😱</button></div><p id="fb"></p>');
+  const msgs=['Mi dispiace, Luca. Non puoi sfuggire a questa ragazza persiana!','Bel tentativo. Il diamante ti ha visto.','Ultima possibilità… il pulsante si sta stancando.'];
+  let n=0;const no=$('#no');
+  const run=()=>{if(n>=3){no.style.display='none';$('#fb').textContent='Ok, il pulsante NO ha lasciato la chat. Resta solo SÌ. 😂';return}
+    $('#fb').textContent=msgs[n++];no.style.left=(Math.random()*140-70)+'px';no.style.top=(Math.random()*90-20)+'px'};
+  no.addEventListener('pointerenter',run);no.addEventListener('click',run);
+  $('#yes').onclick=()=>{hearts();startMusic();culture()};
+}
+
+/* ---------- fase 2: scontro culturale ---------- */
+function culture(){
+  quiz('Ragazzo Italiano vs Ragazza Persiana 🇮🇹💎',[
+   {q:'Negin dice: “Non ho fame.” Cosa deve fare Luca?',o:[
+     ['🍕 Mangiare tutta la pizza','Audace. Molto audace. Se lo ricorderà. 😂',0],
+     ['🍟 Ordinare patatine extra, perché ha di sicuro fame','🏆 +100 Punti Fidanzato! Bravo, hot man! Capisci le ragazze persiane!',10],
+     ['💀 Crederle','🚨 ERRORE CRITICO! Luca, amore mio… hai ancora molto da imparare.',0]]},
+   {q:'Negin dice: “Fai quello che vuoi.” Cosa significa DAVVERO?',o:[
+     ['Fai quello che vuoi','Sbagliato. È una trappola. 🪤',0],
+     ['Rifletti attentamente su tutta la tua esistenza','Giusto, e anche un po’ drammatico. 😂',10],
+     ['Portami subito del cioccolato','Genio. Il cioccolato risolve l’80% dei problemi.',10]]}
+  ],()=>{gem();toast('💎 Diamante 1 di 3 raccolto!',flight)});
+}
+
+/* ---------- fase 3: accorcia la distanza ---------- */
+function flight(){
+  const ob=[['FUSI ORARI','Per te sono le 2 di notte e per me le 5 del mattino… ma noi stiamo ancora parlando.'],
+    ['WI-FI TRADITORE','Persino il Wi-Fi è geloso della nostra connessione.'],
+    ['MANCARTI','Mancarti pesa, ma ogni ciao diventa più grande.'],
+    ['VOLI COSTOSI','Il biglietto costa tanto. Il motivo non ha prezzo.'],
+    ['TROPPI PENSIERI','Colpo di scena: anche lei stava pensando a te.']];
+  let i=0;
+  show('<h2>Accorcia la Distanza ✈️</h2><p class="sub">Guida l’aereo dall’Italia fino a Negin.</p><div class="track"><span id="plane">✈️</span></div><div class="ends"><span>🇮🇹 Luca</span><span>Negin 🇮🇷</span></div><p class="q" id="ob">Pronto al decollo?</p><button class="b go" id="fly">Vola!</button>');
+  $('#fly').onclick=()=>{
+    if(i<ob.length){$('#plane').style.left=((i+1)/(ob.length+1)*85)+'%';$('#ob').innerHTML='<b>Ostacolo: '+ob[i][0]+'</b><br>'+ob[i][1];i++;$('#fly').textContent=i<ob.length?'Continua a volare ✈️':'Atterra!'}
+    else{$('#plane').style.left='88%';hearts();show('<div class="gem"></div><h2>💖 DISTANZA SCONFITTA!</h2><p>Nemmeno migliaia di chilometri fermano un ragazzo italiano in missione.</p>');next('Continua',decoder)}
+  };
+}
+
+/* ---------- fase 4: decodificatore d’amore ---------- */
+function decoder(){
+  quiz('Il Decodificatore Segreto d’Amore 💌',[
+   {q:'Decifra il messaggio segreto di questa ragazza persiana:<br><span style="font-size:1.8rem">❤️ + 🍕 + 🇮🇹 + 💎 = ?</span>',o:[
+     ['A) Amo la pizza italiana','Quasi… ma no. 🍕',0,'retry'],
+     ['B) Amo un certo ragazzo italiano','✨ Bravo, amore. Sei più intelligente di quanto pensassi!',10],
+     ['C) Mandami subito una pizza','Vero anche questo. Ma non è la risposta. 😂',0,'retry']]},
+   {q:'Cosa fa brillare un diamante?',o:[
+     ['A) Il denaro','Neanche per sogno.',0,'retry'],['B) La magia','Carina, ma no.',0,'retry'],
+     ['C) La luce ☀️','Ed è per questo che Negin brilla un po’ di più con Luca. 💎☀️',10]]}
+  ],()=>{gem();toast('💎 Diamante 2 di 3 raccolto!',boyfriend)});
+}
+
+/* ---------- fase 5: il test del fidanzato ---------- */
+function boyfriend(){
+  boy=0;
+  quiz('Il Test del Fidanzato 😏',[
+   {q:'Se Negin ti ruba la felpa, cosa fai?',o:[
+     ['Gliela chiedo indietro','Coraggioso. Incosciente, ma coraggioso.',5],['Ne compro un’altra','Furbo. Rubirà anche quella.',10],
+     ['Accetto che ormai è sua','🏆 +30% Materiale da Fidanzato',30]]},
+   {q:'Negin ti manda 7 selfie. Qual è la risposta giusta?',o:[
+     ['Carina.','Carina?! 😳 Riprova nella prossima vita.',0],['Bellissima ❤️','Bene! Ma erano sette.',10],
+     ['Faccio un complimento a ogni foto come se ne andasse della mia vita','🔥 FIDANZATO LEGGENDARIO! Hot man approved.',35]]},
+   {q:'Negin dice: “Mi manchi.”',o:[
+     ['Anche tu.','Dolce, ma sappiamo che puoi fare meglio.',10],['Mando un cuoricino','Il solo cuoricino è un grido d’aiuto. 😂',5],
+     ['Dico “Anch’io, amore mio” e comincio a organizzare un appuntamento','💘 ROMANTICISMO ITALIANO SBLOCCATO!',35]]}
+  ],()=>{gem();toast('💎 Diamante 3 di 3 raccolto!',date)},true);
+}
+
+/* ---------- fase 6: appuntamento virtuale ---------- */
+function date(){
+  const d={'🍿 Serata Film':'Scegli tu il film. Io scelgo gli snack. Promettiamo entrambi di non addormentarci. Affare fatto?',
+    '🍝 Cuciniamo Insieme':'Stessa ricetta, due cucine, una videochiamata. Chi la brucia lava i piatti… col pensiero.',
+    '🎵 Musica e Chiacchiere Notturne':'Ci scambiamo canzoni, tu mi racconti la tua giornata, io la mia, e nessuno guarda l’ora.',
+    '🌌 Guardiamo le Stelle':'Cieli diversi, stesse stelle. Tu guardi in su, io guardo in su, e per un minuto siamo nello stesso posto.'};
+  show('<h2>Il Nostro Primo Appuntamento Virtuale 🌙</h2><p>Congratulazioni, Signor Luca. Hai superato la Sfida della Fidanzata Persiana.<br>Ora, il tuo premio. <b>Scegli il nostro prossimo appuntamento ❤️</b></p><div class="dates">'+Object.keys(d).map(k=>'<button class="b">'+k+'</button>').join('')+'</div><div id="card"></div>');
+  document.querySelectorAll('.dates button').forEach(b=>b.onclick=()=>{
+    $('#card').innerHTML='<div class="note"><b>'+b.textContent+'</b><br>'+d[b.textContent]+'</div><button class="b go" id="fin" style="margin-top:14px">Apri la sorpresa finale 💎</button>';
+    hearts(8);$('#fin').onclick=finale});
+}
+
+/* ---------- fase 7: sorpresa finale ---------- */
+function finale(){
+  show('<p class="sub">Tocca il diamante…</p><button class="gem big" id="g" aria-label="Apri il diamante"></button>');
+  $('#g').onclick=()=>{
+    hearts(40);
+    show('<div class="letter"><p><b>Caro Luca, my hot man,</b></p><p>Dicono che i diamanti siano rari.<br>Ma sai cos’è ancora più raro?</p><p>Trovare qualcuno che ti fa sorridere a migliaia di chilometri di distanza. Qualcuno che trasforma un giorno qualunque in qualcosa di speciale. Qualcuno i cui messaggi fanno sembrare la distanza un po’ più piccola.</p><p>Il tuo nome significa luce.<br>Il mio significa gemma preziosa.<br>Forse è per questo che insieme siamo così belli.</p><p>Perché anche quando siamo lontani, la tua luce trova sempre la strada per arrivare a me.</p><p><i>Con affetto,<br>La tua naughty girl, il tuo Diamante Persiano 💎❤️</i></p></div>'+
+    '<button class="b go" id="vo" style="margin-top:14px">🎧 Una piccola sorpresa dal tuo Diamante Persiano…</button><p id="fb"></p><p class="sub">Paesi diversi. Lingue diverse. Un’unica splendida connessione. ❤️</p>');
+    const v=$('#voice');$('#vo').onclick=()=>{v.play().catch(()=>{$('#fb').textContent='Il messaggio vocale arriva presto… 💌'})};
+  };
+}
+
+/* ---------- stelle ---------- */
+const cv=$('#stars'),cx=cv.getContext('2d');let S=[];
+function sz(){cv.width=innerWidth;cv.height=innerHeight;S=Array.from({length:90},()=>({x:Math.random()*cv.width,y:Math.random()*cv.height,r:Math.random()*1.6+.3,p:Math.random()*6}))}
+addEventListener('resize',sz);sz();
+(function tw(t){cx.clearRect(0,0,cv.width,cv.height);S.forEach(s=>{cx.globalAlpha=.4+.6*Math.abs(Math.sin(t/1200+s.p));cx.fillStyle='#fff3dc';cx.beginPath();cx.arc(s.x,s.y,s.r,0,7);cx.fill()});requestAnimationFrame(tw)})(0);
+
+intro();
+</script>
+</body>
+</html>
